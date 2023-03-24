@@ -1,4 +1,4 @@
-const path = require('path');
+let path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = (webpackEnv) => {
@@ -15,7 +15,16 @@ module.exports = (webpackEnv) => {
     module: {
       rules: [
         // 不同浏览器对css的支持是不一样的，所以我们需要postcss-loader来作兼容
-        {test: /.css$/i, use:["style-loader","css-loader", {
+        {test: /.css$/i, use:["style-loader",
+        {
+          loader: "css-loader",
+          options: {
+            modules: {
+              localIdentName: '[hash:base64:8]',
+            }
+          }
+        }, 
+        {
           loader: "postcss-loader",
           options: {
             postcssOptions: {
@@ -33,6 +42,12 @@ module.exports = (webpackEnv) => {
           }
         }]},
         {
+          test: /\.(scss|sass)$/,
+          use: [
+            'sass-loader'
+          ]
+        },
+        {
           test: /\.(png|svg|jpg|jpeg|gif)$/,
           type: 'asset',
           generator: {
@@ -44,16 +59,21 @@ module.exports = (webpackEnv) => {
           type: 'asset/resource',
         },
         {
-          test: /\.js$/,
+          test: /\.(js|ts)?$/,
           include: path.resolve(__dirname, './src'),
           use: [
             {
               loader: 'babel-loader',
               options: {
                 presets: [
+                  "@babel/preset-env",
                   [
-                    "@babel/preset-env",
-                  ]
+                    "@babel/preset-react",
+                    {
+                      runtime: 'automatic',
+                    }
+                  ],
+                  "@babel/preset-typescript",
                 ],
                 plugins: [
                   [
@@ -67,13 +87,21 @@ module.exports = (webpackEnv) => {
               }
             }
           ]
-        }
+        },
       ]
     },
     plugins: [
       new HtmlWebpackPlugin({
         template: path.resolve(__dirname, './public/index.ejs')
-      })
-    ]
+      }),
+      new ESLintPlugin({
+        extensions: ['.tsx', '.ts', '.js', '.jsx'],
+        fix: true, // 自动修复错误代码
+      }),
+    ],
+    devtool: 'cheap-module-source-map',
+    cache: {
+      type: "filesystem", // 使用文件缓存
+    },
   }
 }
